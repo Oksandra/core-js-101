@@ -113,33 +113,130 @@ function fromJSON(proto, json) {
  *  For more examples see unit tests.
  */
 
+class SelectoCss {
+  constructor(value = '') {
+    this.elementTag = '';
+    this.elementId = '';
+    this.elementClasses = [];
+    this.elementAttr = [];
+    this.elementPseudoClasses = [];
+    this.elementPseudoElement = '';
+    this.mean = value;
+  }
+
+  element(value) {
+    if (this.elementTag) throw new Error('Element, id and pseudo-element should not occur more then one time inside the selector');
+    if (this.elementId || this.elementClasses[0]
+      || this.elementAttr[0] || this.elementPseudoClasses[0]
+      || this.elementPseudoElement) {
+      throw new Error('Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element');
+    }
+    this.elementTag = value;
+    return this;
+  }
+
+  id(value) {
+    if (this.elementId) throw new Error('Element, id and pseudo-element should not occur more then one time inside the selector');
+    if (this.elementClasses[0] || this.elementAttr[0]
+      || this.elementPseudoClasses[0] || this.elementPseudoElement) {
+      throw new Error('Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element');
+    }
+    this.elementId = value;
+    return this;
+  }
+
+  class(value) {
+    if (this.elementAttr[0] || this.elementPseudoClasses[0] || this.elementPseudoElement) {
+      throw new Error('Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element');
+    }
+    this.elementClasses.push(value);
+    return this;
+  }
+
+  attr(value) {
+    if (this.elementPseudoClasses[0] || this.elementPseudoElement) {
+      throw new Error('Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element');
+    }
+    this.elementAttr.push(value);
+    return this;
+  }
+
+  pseudoClass(value) {
+    if (this.elementPseudoElement) throw new Error('Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element');
+    this.elementPseudoClasses.push(value);
+    return this;
+  }
+
+  pseudoElement(value) {
+    if (this.elementPseudoElement) throw new Error('Element, id and pseudo-element should not occur more then one time inside the selector');
+    this.elementPseudoElement = value;
+    return this;
+  }
+
+  stringify() {
+    let res = '';
+    if (this.elementTag) {
+      res += `${this.elementTag}`;
+    }
+    if (this.elementId) {
+      res += `#${this.elementId}`;
+    }
+    if (this.elementClasses[0]) {
+      this.elementClasses.forEach((cl) => {
+        res += `.${cl}`;
+      });
+    }
+    if (this.elementAttr[0]) {
+      this.elementAttr.forEach((atr) => {
+        res += `[${atr}]`;
+      });
+    }
+    if (this.elementPseudoClasses[0]) {
+      this.elementPseudoClasses.forEach((psev) => {
+        res += `:${psev}`;
+      });
+    }
+    if (this.elementPseudoElement) {
+      res += `::${this.elementPseudoElement}`;
+    }
+    return res;
+  }
+}
+
 const cssSelectorBuilder = {
-  element(/* value */) {
-    throw new Error('Not implemented');
+  element(value) {
+    return new SelectoCss().element(value);
   },
 
-  id(/* value */) {
-    throw new Error('Not implemented');
+  id(value) {
+    return new SelectoCss().id(value);
   },
 
-  class(/* value */) {
-    throw new Error('Not implemented');
+  class(value) {
+    return new SelectoCss().class(value);
   },
 
-  attr(/* value */) {
-    throw new Error('Not implemented');
+  attr(value) {
+    return new SelectoCss().attr(value);
   },
 
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
+  pseudoClass(value) {
+    return new SelectoCss().pseudoClass(value);
   },
 
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
+  pseudoElement(value) {
+    return new SelectoCss().pseudoElement(value);
   },
 
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
+  combine(selector1, combine, selector2) {
+    return {
+      firstSel: selector1.stringify(),
+      secondtSel: selector2.stringify(),
+      combine,
+      stringify() {
+        return `${this.firstSel} ${this.combine} ${this.secondtSel}`;
+      },
+    };
   },
 };
 
